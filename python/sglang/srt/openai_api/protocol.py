@@ -182,6 +182,7 @@ class CompletionRequest(BaseModel):
     skip_special_tokens: bool = True
     lora_path: Optional[Union[List[Optional[str]], Optional[str]]] = None
     session_params: Optional[Dict] = None
+    top_n_sigma: float = 0.0
 
 
 class CompletionResponseChoice(BaseModel):

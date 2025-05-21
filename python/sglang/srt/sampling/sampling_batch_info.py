@@ -23,12 +23,14 @@ class SamplingBatchInfo:
     top_ps: torch.Tensor
     top_ks: torch.Tensor
     min_ps: torch.Tensor
+    top_n_sigmas: torch.Tensor
 
     # Whether all requests use greedy sampling
     is_all_greedy: bool
 
     # Whether any request needs min_p sampling
     need_min_p_sampling: bool
+    need_top_n_sigma_sampling: bool
 
     # Masking tensors for grammar-guided structured outputs
     vocab_size: int
@@ -76,6 +78,9 @@ class SamplingBatchInfo:
         min_ps = torch.tensor(
             [r.sampling_params.min_p for r in reqs], dtype=torch.float
         ).to(device, non_blocking=True)
+        top_n_sigmas = torch.tensor([r.sampling_params.top_n_sigma for r in reqs], dtype=torch.float).to(
+            device, non_blocking=True
+        )
 
         # Check if any request has custom logit processor
         has_custom_logit_processor = (
@@ -132,8 +137,10 @@ class SamplingBatchInfo:
             top_ps=top_ps,
             top_ks=top_ks,
             min_ps=min_ps,
+            top_n_sigmas=top_n_sigmas,
             is_all_greedy=all(r.sampling_params.top_k <= 1 for r in reqs),
             need_min_p_sampling=any(r.sampling_params.min_p > 0 for r in reqs),
+            need_top_n_sigma_sampling=any(r.sampling_params.top_n_sigma > 0 for r in reqs),
             vocab_size=vocab_size,
             penalizer_orchestrator=penalizer_orchestrator,
             has_custom_logit_processor=has_custom_logit_processor,
@@ -207,6 +214,7 @@ class SamplingBatchInfo:
             "top_ps",
             "top_ks",
             "min_ps",
+            "top_n_sigmas",
         ]:
             value = getattr(self, item, None)
             setattr(self, item, value[keep_indices_device])
@@ -302,6 +310,7 @@ class SamplingBatchInfo:
             "top_ps",
             "top_ks",
             "min_ps",
+            "top_n_sigmas",
         ]:
             self_val = getattr(self, item, None)
             other_val = getattr(other, item, None)
